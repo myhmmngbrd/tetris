@@ -8,6 +8,7 @@
 #include <random>
 #include <future>
 #include <functional>
+#include <mutex>
 
 #define I_BLOCK 0
 #define O_BLOCK 1
@@ -55,6 +56,7 @@ public:
 				box[i][j] = 0;
 			}
 		}
+		type = 6;
 		switch (type)
 		{
 		case I_BLOCK:
@@ -176,8 +178,15 @@ public:
 			}
 		}
 	}
+	void RemoveRow(int index) {
+		for (int i = index; i > 0; i--) {
+			for (int j = 0; j < 10; j++) {
+				box[i][j] = box[i - 1][j];
+			}
+		}
+	}
 	void CheckFull () {
-		int hole;
+		int hole = 1;
 		for (int i = 0; i < 20; i++) {
 			for (int j = 0; j < 10; j++) {
 				if (!box[i][j]) hole = 1;
@@ -186,14 +195,8 @@ public:
 			else RemoveRow(i);
 		}
 	}
-	void RemoveRow(int index) {
-		for (int i = index; i > 0; i--) {
-			for (int j = 0; j < 10; j++) {
-				box[i][j] = box[i - 1][j];
-			}
-		}
-	}
 	void solid() {
+		backup();
 		CheckFull();
 		for (int i = 0; i < 20; i++) {
 			for (int j = 0; j < 10; j++) {
@@ -206,6 +209,7 @@ public:
 class Game {
 	Block block;
 	Board board;
+	std::mutex m;
 	void cursorview(char show)//커서숨기기
 	{
 		HANDLE hConsole;
@@ -331,9 +335,6 @@ class Game {
 		else block.rollback();
 	}
 	std::vector<int> CrashCheck() {
-		// 1. 2 블럭에 닿았는지
-		// 2. 바닥에 닿았는지
-		// 3. 충돌부위 반환
 		int x = block.hor();
 		int y = block.ver();
 		std::vector<int> result;
@@ -375,6 +376,7 @@ class Game {
 			// 32 space
 			int key = _getch();
 			if (key) {
+				m.lock();
 				std::vector<int> crash;
 				if (key == 75) {
 					left();
@@ -386,6 +388,7 @@ class Game {
 					rotate();
 				}
 				Update();
+				m.unlock();
 			}
 		}
 	}
@@ -403,16 +406,21 @@ public:
 		int gameover, landing;
 		do {
 			Sleep(200);
+			m.lock();
 			gameover = Create(dis(gen));
 			gotoxy(30, 25);
 			std::cout << gameover;
-			//board.print();
+			Sleep(50);
 			Update();
+			m.unlock();
 			do {
 				Sleep(100);
+				m.lock();
 				landing = down();
 				//board.print();
+				Sleep(50);
 				Update();
+				m.unlock();
 			} while (landing);
 		} while (gameover);
 		t.join();
@@ -420,23 +428,8 @@ public:
 	
 };
 
-void worker(int* p) {
-	*p = 1;
-}
-
 
 int main() {
-	//Game tetris;
-	//tetris.start();
-
-	//std::promise<int> p;
-	//std::future<int> data = p.get_future();
-	int p;
-
-	std::thread t(worker, &p);
-
-	Sleep(500);
-	std::cout << p << std::endl;
-
-	t.join();
+	Game tetris;
+	tetris.start();
 }
