@@ -1,11 +1,13 @@
-#include<iostream>
-#include<windows.h>
+#include <iostream>
+#include <windows.h>
 #include <vector>
 #include <array>
 #include <string>
 #include <thread>
 #include <conio.h>
 #include <random>
+#include <future>
+#include <functional>
 
 #define I_BLOCK 0
 #define O_BLOCK 1
@@ -418,11 +420,23 @@ public:
 	
 };
 
-
+void worker(int* p) {
+	*p = 1;
+}
 
 
 int main() {
 	//Game tetris;
 	//tetris.start();
 
+	//std::promise<int> p;
+	//std::future<int> data = p.get_future();
+	int p;
+
+	std::thread t(worker, &p);
+
+	Sleep(500);
+	std::cout << p << std::endl;
+
+	t.join();
 }
