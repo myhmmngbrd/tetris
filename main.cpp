@@ -11,27 +11,68 @@
 #include <mutex>
 
 #define I_BLOCK 0
-#define O_BLOCK 1
-#define L_BLOCK 2
-#define J_BLOCK 3
-#define S_BLOCK 4
-#define Z_BLOCK 5
-#define T_BLOCK 6
+#define T_BLOCK 1
+#define O_BLOCK 2
+#define	S_BLOCK 3
+#define Z_BLOCK 4
+#define J_BLOCK 5
+#define L_BLOCK 6
 
 using std::array;
 using std::vector;
 using std::string;
+
+
+class Block {
+	vector<int> type;
+	int x, y;
+	vector<int> block;
+	void next() {
+		
+	}
+};
+
+class Imino : public Block {
+	vector<int> type = { 0x00f0, 0x2222 };
+};
+
+class Tmino : public Block {
+	vector<int> type = { 0x0270, 0x0232, 0x0072, 0x0262 };
+};
+
+class Omino : public Block {
+	vector<int> type = { 0x0660 };
+};
+
+class Smino : public Block {
+	vector<int> type = { 0x0360, 0x0231 };
+};
+
+class Zmino : public Block {
+	vector<int> type = { 0x0c60, 0x04c8 };
+};
+
+class Jmino : public Block {
+	vector<int> type = { 0x0470, 0x0322, 0x0071, 0x0226 };
+};
+
+class Lmino : public Block {
+	vector<int> type = { 0x02e0, 0x0446, 0x00e8, 0x0c44 };
+};
+
+
+/*
 
 class Block {
 	array< array<int, 4>, 4 > box = { 0, };
 	array< array<int, 4>, 4 > before = { 0, };
 	array<int, 2> log;
 	int x = 0, y = 0; // box[0][1] = {x:1, y:0}
+public:
 	void backup() {
 		log[0] = x;
 		log[1] = y;
 	}
-public:
 	void cancel() {
 		x = log[0];
 		y = log[1];
@@ -44,19 +85,17 @@ public:
 			printf("\n");
 		}
 	}
-	std::array<int, 4> operator[] (int index) {
+	array<int, 4>& operator[] (int index) {
 		return box[index];
 	}
 
 
 	void init(int  type) {
-		backup();
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				box[i][j] = 0;
 			}
 		}
-		type = 6;
 		switch (type)
 		{
 		case I_BLOCK:
@@ -108,15 +147,12 @@ public:
 		y = -2;
 	}
 	void down() {
-		backup();
 		y++;
 	}
 	void left() {
-		backup();
 		x--;
 	}
 	void right() {
-		backup();
 		x++;
 	}
 	void rotate() {
@@ -149,9 +185,9 @@ public:
 };
 
 class Board {
-	int box[20][10] = { 0, };
+	array<array<int, 10>, 20> box = { 0, };
 public:
-	int log[20][10] = { 0, };
+	array<array<int, 10>, 20> log = { 0, };
 	void print() {
 		system("cls");
 		for (int i = 0; i < 20; i++) {
@@ -161,15 +197,11 @@ public:
 			printf("\n");
 		}
 	}
-	int* operator[] (int index) {
+	array<int, 10>& operator[] (int index) {
 		return box[index];
 	}
 	void backup() {
-		for (int i = 0; i < 20; i++) {
-			for (int j = 0; j < 10; j++) {
-				log[i][j] = box[i][j];
-			}
-		}
+		log = box;
 	}
 	void RemoveBlock() {
 		for (int i = 0; i < 20; i++) {
@@ -180,9 +212,7 @@ public:
 	}
 	void RemoveRow(int index) {
 		for (int i = index; i > 0; i--) {
-			for (int j = 0; j < 10; j++) {
-				box[i][j] = box[i - 1][j];
-			}
+			box[i] = box[i - 1];
 		}
 	}
 	void CheckFull () {
@@ -196,7 +226,6 @@ public:
 		}
 	}
 	void solid() {
-		backup();
 		CheckFull();
 		for (int i = 0; i < 20; i++) {
 			for (int j = 0; j < 10; j++) {
@@ -210,6 +239,10 @@ class Game {
 	Block block;
 	Board board;
 	std::mutex m;
+	void message(string m) {
+		gotoxy(30, 10);
+		std::cout << m << std::endl;
+	}
 	void cursorview(char show)//커서숨기기
 	{
 		HANDLE hConsole;
@@ -229,7 +262,7 @@ class Game {
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
 	}
 	void drawbox(int x, int y, int w, int h) {
-		/*
+		
 		* 너비와 높이는 박스가 아닌 컨텐츠기준
 		* 좌상: ┌
 		* 좌하: └
@@ -238,7 +271,7 @@ class Game {
 		* 가로: ─
 		* 세로: │
 		* 박스: □ ■
-		*/
+		
 		gotoxy(x * 2, y);
 		printf("┌");
 		gotoxy(x * 2 + w * 2 + 2, y);
@@ -261,7 +294,6 @@ class Game {
 		}
 	}
 	void Input() { // 보드에 블럭 집어넣기
-		board.backup();
 		board.RemoveBlock();
 		int x = block.hor();
 		int y = block.ver();
@@ -274,7 +306,7 @@ class Game {
 		}
 	}
 	int Create(int type) {
-		Sleep(200);
+		block.backup();
 		block.init(type);
 		std::vector<int> crash = CrashCheck();
 
@@ -282,11 +314,14 @@ class Game {
 			return 0; //게임종료
 		}
 		else {
+			board.backup();
 			Input();
 			return 1;
 		}
 	}
 	int down() {
+		block.backup();
+		board.backup();
 		block.down();
 		std::vector<int> crash = CrashCheck();
 		if (!crash.size()) { // 충돌 없으면
@@ -300,26 +335,31 @@ class Game {
 		}
 	}
 	void left() {
+		block.backup();
 		block.left();
 		std::vector<int> crash = CrashCheck();
 		if (!crash.size()) {
+			board.backup();
 			Input();
 		} else block.cancel();
 	}
 	void right() {
+		block.backup();
 		block.right();
 		std::vector<int> crash = CrashCheck();
 		if (!crash.size()) {
+			board.backup();
 			Input();
 		} else block.cancel();
 	}
 	void fall() {
+		block.backup();
 		block.down();
 		std::vector<int> crash = CrashCheck();
 		if (!crash.size()) {
 			return fall();
-		}
-		else {
+		} else {
+			board.backup();
 			block.cancel();
 			Input();
 			board.solid();
@@ -330,6 +370,7 @@ class Game {
 		block.rotate();
 		std::vector<int> crash = CrashCheck();
 		if (!crash.size()) {
+			board.backup();
 			Input();
 		}
 		else block.rollback();
@@ -374,6 +415,7 @@ class Game {
 			// 77 right
 			// 80 down
 			// 32 space
+			// 72 up
 			int key = _getch();
 			if (key) {
 				m.lock();
@@ -385,6 +427,8 @@ class Game {
 				} else if (key == 80) {
 					down();
 				} else if (key == 32) {
+					fall();
+				} else if (key == 72) {
 					rotate();
 				}
 				Update();
@@ -410,26 +454,24 @@ public:
 			gameover = Create(dis(gen));
 			gotoxy(30, 25);
 			std::cout << gameover;
-			Sleep(50);
 			Update();
 			m.unlock();
 			do {
 				Sleep(100);
 				m.lock();
 				landing = down();
-				//board.print();
-				Sleep(50);
 				Update();
 				m.unlock();
 			} while (landing);
 		} while (gameover);
 		t.join();
 	}
-	
 };
 
-
+*/
 int main() {
-	Game tetris;
-	tetris.start();
+	//Game tetris;
+	//tetris.start();
+
+
 }
