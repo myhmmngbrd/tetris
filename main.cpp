@@ -22,42 +22,96 @@ using std::array;
 using std::vector;
 using std::string;
 
+namespace Mino {
+	class Block {
+	protected:
+		vector<int> type;
+		int index = 0;
+		int x = 3, y = -2;
+		array < array<int, 4>, 4> block = { 0, };
+		int count() {
+			return index == type.size() ?  (index=0)++ : index++;
+		}
+	public:
+		Block(vector<int> type) : type(type) { }
+		void createBlock() {
+			int shape = type[count()];
+			for (int i = 0; i < 4; i++) {
+				int hexa = shape % 16;
+				for (int j = 0; j < 4; j++) {
+					int binary = hexa % 2;
+					block[3-i][3-j] = binary;
+					hexa /= 2;
+				}
+				shape /= 16;
+			}
+		}
+		void print() {
+			std::cout << std::hex << type[0] << std::endl;
+			for (array<int, 4> row : block) {
+				for (int element : row) {
+					printf("%d", element);
+				}
+				printf("\n");
+			}
+		}
+	};
 
-class Block {
-	vector<int> type;
-	int x, y;
-	vector<int> block;
-	void next() {
-		
+	class Imino : public Block {
+	public:
+		Imino() : Block({ 0x00f0, 0x2222 }) { }
+	};
+
+	class Tmino : public Block {
+	public:
+		Tmino() : Block({ 0x0270, 0x0232, 0x0072, 0x0262 }) { }
+	};
+
+	class Omino : public Block {
+	public:
+		Omino() : Block({ 0x0660 }) { }
+	};
+
+	class Smino : public Block {
+	public:
+		Smino() : Block({ 0x0360, 0x0231 }) { }
+	};
+
+	class Zmino : public Block {
+	public:
+		Zmino() : Block({ 0x0c60, 0x04c8 }) { }
+	};
+
+	class Jmino : public Block {
+	public:
+		Jmino() : Block({ 0x0470, 0x0322, 0x0071, 0x0226 }) { }
+	};
+
+	class Lmino : public Block {
+	public:
+		Lmino() : Block({ 0x02e0, 0x0446, 0x00e8, 0x0c44 }) { }
+	};
+}
+
+class Board {
+	array< array<int, 10>, 20> board = { 0, };
+	array< array<int, 10>, 20> before = { 0, };
+public:
+	void backup() { // 현재 상태를 저장하여, 나중에 출력시 다른 부분 찾는데 사용
+		before = board;
 	}
-};
-
-class Imino : public Block {
-	vector<int> type = { 0x00f0, 0x2222 };
-};
-
-class Tmino : public Block {
-	vector<int> type = { 0x0270, 0x0232, 0x0072, 0x0262 };
-};
-
-class Omino : public Block {
-	vector<int> type = { 0x0660 };
-};
-
-class Smino : public Block {
-	vector<int> type = { 0x0360, 0x0231 };
-};
-
-class Zmino : public Block {
-	vector<int> type = { 0x0c60, 0x04c8 };
-};
-
-class Jmino : public Block {
-	vector<int> type = { 0x0470, 0x0322, 0x0071, 0x0226 };
-};
-
-class Lmino : public Block {
-	vector<int> type = { 0x02e0, 0x0446, 0x00e8, 0x0c44 };
+	vector<int>& compare() {
+		static vector<int> defer;
+		for (unsigned int i = 0; i < board.size(); i++) {
+			for (unsigned int j = 0; j < board[0].size(); j++) {
+				if (board[i][j] != before[i][j]) defer.push_back(i * board.size() + j);
+			}
+		}
+		return defer;
+	}
+	array<int, 10>& operator[] (int index) {
+		return board[index];
+	}
 };
 
 
@@ -473,5 +527,6 @@ int main() {
 	//Game tetris;
 	//tetris.start();
 
-
+	Mino::Block* mino = new Mino::Imino;
+	mino->print();
 }
