@@ -18,9 +18,127 @@
 #define J_BLOCK 5
 #define L_BLOCK 6
 
+#define ANSI_RED "\x1b[31m"
+#define ANSI_GREEN "\x1b[32m"
+#define ANSI_YELLOW "\x1b[33m"
+#define ANSI_BLUE "\x1b[34m"
+#define ANSI_MAGENTA "\x1b[35m"
+#define ANSI_CYAN "\x1b[36m"
+#define ANSI_RESET "\x1b[0m"
+
 using std::array;
 using std::vector;
 using std::string;
+
+array< vector<int>, 7 > blocks = {
+	vector<int> { 0x00f0, 0x2222 }, // I
+	vector<int> { 0x0270, 0x0232, 0x0072, 0x0262 }, // T
+	vector<int> { 0x0660 }, // O
+	vector<int> { 0x0360, 0x0231 }, // S
+	vector<int> { 0x0c60, 0x04c8 }, // Z
+	vector<int> { 0x0470, 0x0322, 0x0071, 0x0226 }, // J
+	vector<int> { 0x02e0, 0x0446, 0x00e8, 0x0c44 } // L
+};
+
+struct Dot {
+	int x, y;
+	string value;
+	string color;
+};
+
+class Canvas {
+		/*
+		 * 좌상: ┌
+		 * 좌하 : └
+		 * 우상 : ┐
+		 * 우하 : ┘
+		 * 가로 : ─
+		 * 세로 : │
+		 * 박스 : □ ■
+		 */
+	int canvas_left, canvas_top, canvas_width, canvas_height;
+	void cursorview(char show)
+	{
+		HANDLE hConsole;
+		CONSOLE_CURSOR_INFO ConsoleCursor;
+
+		hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+		ConsoleCursor.bVisible = show;
+		ConsoleCursor.dwSize = 1;
+
+		SetConsoleCursorInfo(hConsole, &ConsoleCursor);
+	}
+	void gotoxy(int x, int y) {
+		COORD Pos;
+		Pos.X = x;
+		Pos.Y = y;
+		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
+	}
+public:
+	Canvas(int left, int top, int width, int height) : canvas_left(left), canvas_top(top), canvas_width(width), canvas_height(height) {
+		cursorview(0);
+	}
+	~Canvas() {
+		gotoxy(0, canvas_top + canvas_height);
+	}
+	void DrawBorder() {
+		for (int i = 1; i < canvas_height-1; i++) {
+			gotoxy(canvas_left*2, canvas_top + i);
+			printf("│");
+			gotoxy((canvas_left + canvas_width - 1) * 2, canvas_top + i);
+			printf("│");
+		}
+		for (int i = 1; i < canvas_width-1; i++) {
+			gotoxy((canvas_left + i) * 2, canvas_top);
+			printf("─");
+			gotoxy((canvas_left + i) * 2, canvas_top + canvas_height - 1);
+			printf("─");
+		}
+		gotoxy(canvas_left * 2, canvas_top);
+		printf("┌");
+		gotoxy(canvas_left * 2, canvas_top + canvas_height - 1);
+		printf("└");
+		gotoxy((canvas_left + canvas_width - 1) * 2, canvas_top);
+		printf("┐");
+		gotoxy((canvas_left + canvas_width - 1) * 2, canvas_top + canvas_height - 1);
+		printf("┘");
+	}
+	void DrawBox(int left, int top, int width, int height) {
+		if ((left < 0) || (top < 0) || (left + width > canvas_width) || (top + height > canvas_height)) {
+			// 박스가 캔버스 범위 초과
+			return;
+		}
+		for (int i = 1; i < height - 1; i++) {
+			gotoxy((canvas_left + left) * 2, (canvas_top + top) + i);
+			printf("│");
+			gotoxy((canvas_left + left + width - 1) * 2, (canvas_top + top) + i);
+			printf("│");
+		}
+		for (int i = 1; i < width - 1; i++) {
+			gotoxy((canvas_left + left + i) * 2, (canvas_top + top));
+			printf("─");
+			gotoxy((canvas_left + left + i) * 2, canvas_top + top + height - 1);
+			printf("─");
+		}
+		gotoxy((canvas_left + left) * 2, canvas_top + top);
+		printf("┌");
+		gotoxy((canvas_left + left) * 2, canvas_top + top + height - 1);
+		printf("└");
+		gotoxy((canvas_left + left + width - 1) * 2, canvas_top + top);
+		printf("┐");
+		gotoxy((canvas_left + left + width - 1) * 2, canvas_top + top + height - 1);
+		printf("┘");
+	}
+	void DrawDot(int x, int y, string value, string color) {
+		if (x < 0 || y < 0 || x > canvas_width || y > canvas_height) {
+			return;
+		}
+		gotoxy((canvas_left + x) * 2, canvas_top);
+		printf((color + value + "\x1b[0m").c_str());
+	}
+};
+
 
 namespace Mino {
 	class Block {
@@ -29,6 +147,7 @@ namespace Mino {
 		int index = 0;
 		int x = 3, y = -2;
 		array < array<int, 4>, 4> block = { 0, };
+		array < array<int, 4>, 4> environment = { 0, };
 		int count() {
 			return index == type.size() ?  (index=0)++ : index++;
 		}
@@ -48,11 +167,18 @@ namespace Mino {
 		}
 		void print() {
 			std::cout << std::hex << type[0] << std::endl;
-			for (array<int, 4> row : block) {
-				for (int element : row) {
+			for (auto row : block) {
+				for (auto element : row) {
 					printf("%d", element);
 				}
 				printf("\n");
+			}
+		}
+		vector<int> collisioncheck(array< array<int, 10>, 20> board) {
+			for (int i = 0; i < 4;  i++) {
+				for (int j = 0; j < 4; j++) {
+					
+				}
 			}
 		}
 	};
@@ -526,7 +652,8 @@ public:
 int main() {
 	//Game tetris;
 	//tetris.start();
-
-	Mino::Block* mino = new Mino::Imino;
-	mino->print();
+	Canvas board(0,0,20,20);
+	board.DrawBorder();
+	board.DrawBox(0,0,10,10);
+	board.DrawDot(0, 0, "\b", "\x1b[31m");
 }
