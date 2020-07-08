@@ -30,6 +30,8 @@ using std::array;
 using std::vector;
 using std::string;
 
+
+
 array< vector<int>, 7 > blocks = {
 	vector<int> { 0x00f0, 0x2222 }, // I
 	vector<int> { 0x0270, 0x0232, 0x0072, 0x0262 }, // T
@@ -74,6 +76,13 @@ class Canvas {
 		Pos.X = x;
 		Pos.Y = y;
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
+	}
+	void DrawDot(int x, int y, string value, string color) {
+		if (x < 0 || y < 0 || x > canvas_width || y > canvas_height) {
+			return;
+		}
+		gotoxy((canvas_left + x) * 2, canvas_top);
+		printf((color + value + "\x1b[0m").c_str());
 	}
 public:
 	Canvas(int left, int top, int width, int height) : canvas_left(left), canvas_top(top), canvas_width(width), canvas_height(height) {
@@ -130,12 +139,10 @@ public:
 		gotoxy((canvas_left + left + width - 1) * 2, canvas_top + top + height - 1);
 		printf("же");
 	}
-	void DrawDot(int x, int y, string value, string color) {
-		if (x < 0 || y < 0 || x > canvas_width || y > canvas_height) {
-			return;
+	void DrawDots(vector<Dot>& dots) {
+		for (Dot dot : dots) {
+			gotoxy((canvas_left + dot.x) * 2, canvas_top + dot.y);
 		}
-		gotoxy((canvas_left + x) * 2, canvas_top);
-		printf((color + value + "\x1b[0m").c_str());
 	}
 };
 
