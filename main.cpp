@@ -31,33 +31,27 @@ using std::vector;
 using std::string;
 
 
-
-array< vector<int>, 7 > blocks = {
-	vector<int> { 0x00f0, 0x2222 }, // I
-	vector<int> { 0x0270, 0x0232, 0x0072, 0x0262 }, // T
-	vector<int> { 0x0660 }, // O
-	vector<int> { 0x0360, 0x0231 }, // S
-	vector<int> { 0x0c60, 0x04c8 }, // Z
-	vector<int> { 0x0470, 0x0322, 0x0071, 0x0226 }, // J
-	vector<int> { 0x02e0, 0x0446, 0x00e8, 0x0c44 } // L
-};
-
-struct Dot {
+class Dot {
+public:
 	int x, y;
-	string value;
-	string color;
+	string value = "  ";
+	string color = "";
+	bool operator==(Dot& other) {
+		return (value == other.value) && (color == other.color);
+	}
 };
+
 
 class Canvas {
-		/*
-		 * 좌상: ┌
-		 * 좌하 : └
-		 * 우상 : ┐
-		 * 우하 : ┘
-		 * 가로 : ─
-		 * 세로 : │
-		 * 박스 : □ ■
-		 */
+	/*
+	 * 좌상: ┌
+	 * 좌하 : └
+	 * 우상 : ┐
+	 * 우하 : ┘
+	 * 가로 : ─
+	 * 세로 : │
+	 * 박스 : □ ■
+	 */
 	int canvas_left, canvas_top, canvas_width, canvas_height;
 	void cursorview(char show)
 	{
@@ -81,7 +75,7 @@ class Canvas {
 		if (x < 0 || y < 0 || x > canvas_width || y > canvas_height) {
 			return;
 		}
-		gotoxy((canvas_left + x) * 2, canvas_top);
+		gotoxy((canvas_left + x) * 2, canvas_top + y);
 		printf((color + value + "\x1b[0m").c_str());
 	}
 public:
@@ -92,13 +86,13 @@ public:
 		gotoxy(0, canvas_top + canvas_height);
 	}
 	void DrawBorder() {
-		for (int i = 1; i < canvas_height-1; i++) {
-			gotoxy(canvas_left*2, canvas_top + i);
+		for (int i = 1; i < canvas_height - 1; i++) {
+			gotoxy(canvas_left * 2, canvas_top + i);
 			printf("│");
 			gotoxy((canvas_left + canvas_width - 1) * 2, canvas_top + i);
 			printf("│");
 		}
-		for (int i = 1; i < canvas_width-1; i++) {
+		for (int i = 1; i < canvas_width - 1; i++) {
 			gotoxy((canvas_left + i) * 2, canvas_top);
 			printf("─");
 			gotoxy((canvas_left + i) * 2, canvas_top + canvas_height - 1);
@@ -141,109 +135,282 @@ public:
 	}
 	void DrawDots(vector<Dot>& dots) {
 		for (Dot dot : dots) {
-			gotoxy((canvas_left + dot.x) * 2, canvas_top + dot.y);
+			DrawDot(dot.x, dot.y, dot.value, dot.color);
 		}
 	}
 };
 
 
-namespace Mino {
-	class Block {
-	protected:
-		vector<int> type;
-		int index = 0;
-		int x = 3, y = -2;
-		array < array<int, 4>, 4> block = { 0, };
-		array < array<int, 4>, 4> environment = { 0, };
-		int count() {
-			return index == type.size() ?  (index=0)++ : index++;
-		}
-	public:
-		Block(vector<int> type) : type(type) { }
-		void createBlock() {
-			int shape = type[count()];
-			for (int i = 0; i < 4; i++) {
-				int hexa = shape % 16;
-				for (int j = 0; j < 4; j++) {
-					int binary = hexa % 2;
-					block[3-i][3-j] = binary;
-					hexa /= 2;
-				}
-				shape /= 16;
+/*
+	테트리스 게임
+	'보드'와 '블럭'
+	보드는 가로 10, 세로 20칸
+	블럭은 7종류, 색상값을 가짐.
+	블럭은 오른쪽, 왼쪽, 아래쪽으로 각각 한칸씩 이동 가능
+	블럭은 각 모양에 맞게 회전 가능
+	블럭은 아래쪽으로 이동 시, 보드 바닥이나 다른 블럭에 막힌다면 고정됨
+	블럭은 오른쪽, 왼쪽으로 이동시, 보드 벽면이나 다른 블럭에 막힌다면 이동하지 않음
+	블럭은 회전 시, 보드 벽면이나 다른 블럭에 막힌다면 그 경우에 따라 반대 방향으로 이동하여 회전 재시도.
+
+			* 너비와 높이는 박스가 아닌 컨텐츠기준
+		* 좌상: ┌
+		* 좌하: └
+		* 우상: ┐
+		* 우하: ┘
+		* 가로: ─
+		* 세로: │
+		* 박스: □ ■
+*/
+
+
+
+
+class Block {
+	array< vector<int>, 7 > blocks = {
+	vector<int> { 0x00f0, 0x2222 }, // I
+	vector<int> { 0x0270, 0x0232, 0x0072, 0x0262 }, // T
+	vector<int> { 0x0660 }, // O
+	vector<int> { 0x0360, 0x0231 }, // S
+	vector<int> { 0x0c60, 0x04c8 }, // Z
+	vector<int> { 0x0470, 0x0322, 0x0071, 0x0226 }, // J
+	vector<int> { 0x02e0, 0x0446, 0x00e8, 0x0c44 } // L
+	};
+	int type = 0; // block[type]
+	int rotation = 0; // block[type][rotation]
+	int x = 3, y = -2; // x=0/y=0 : block[0][0], board[0][0] 
+	int color; // 0~6
+	array<int, 3> movelog = { 0, };
+	array< array<int, 4>, 4> block = { 0, };
+	array< array<int, 4>, 4> oldblock = { 0, };
+	void posbackup(int x, int y, int r) {
+		movelog[0] = x;
+		movelog[1] = y;
+		movelog[2] = r;
+	}
+	void blockbackup() {
+		oldblock = block;
+	}
+	void create() {
+		blockbackup();
+		int number, hex, binary;
+		number = block[type][rotation];
+		for (int i = 0; i < 4; i++) {
+			hex = number % 16;
+			for (int j = 0; j < 4; j++) {
+				binary = hex % 2;
+				block[3 - i][3 - j] = binary;
+				hex /= 2;
 			}
+			number /= 16;
 		}
-		void print() {
-			std::cout << std::hex << type[0] << std::endl;
-			for (auto row : block) {
-				for (auto element : row) {
-					printf("%d", element);
-				}
-				printf("\n");
-			}
+	}
+public:
+	Block() {
+		init();
+	}
+	void init() {
+		x = 3;
+		y = -2;
+		rotation = 0;
+		type = 0; //랜덤함수
+		color = 0; // 랜덤함수
+	}
+	void back() {
+		x = movelog[0];
+		y = movelog[1];
+		if (rotation != movelog[2]) { // rotate 했다면
+			block = oldblock;
+			rotation = movelog[2];
 		}
-		vector<int> collisioncheck(array< array<int, 10>, 20> board) {
-			for (int i = 0; i < 4;  i++) {
-				for (int j = 0; j < 4; j++) {
-					
-				}
-			}
-		}
-	};
-
-	class Imino : public Block {
-	public:
-		Imino() : Block({ 0x00f0, 0x2222 }) { }
-	};
-
-	class Tmino : public Block {
-	public:
-		Tmino() : Block({ 0x0270, 0x0232, 0x0072, 0x0262 }) { }
-	};
-
-	class Omino : public Block {
-	public:
-		Omino() : Block({ 0x0660 }) { }
-	};
-
-	class Smino : public Block {
-	public:
-		Smino() : Block({ 0x0360, 0x0231 }) { }
-	};
-
-	class Zmino : public Block {
-	public:
-		Zmino() : Block({ 0x0c60, 0x04c8 }) { }
-	};
-
-	class Jmino : public Block {
-	public:
-		Jmino() : Block({ 0x0470, 0x0322, 0x0071, 0x0226 }) { }
-	};
-
-	class Lmino : public Block {
-	public:
-		Lmino() : Block({ 0x02e0, 0x0446, 0x00e8, 0x0c44 }) { }
-	};
-}
+	}
+	void down() { posbackup(x, y++, rotation); }
+	void left() { posbackup(x--, y, rotation); }
+	void right() { posbackup(x++, y, rotation); }
+	void rotate() { 
+		posbackup(x, y, rotation);
+		if (++rotation == blocks[type].size()) rotation = 0;
+		create();
+	}
+	int getblock() { return blocks[type][rotation]; }
+	int getx() { return x; }
+	int gety() { return y; }
+	int getoldx() { return movelog[0]; }
+	int getoldy() { return movelog[1]; }
+	int getcolor() { return color; }
+};
 
 class Board {
+	/*
+		0 : 빈칸
+		1 ~ 7 : 색상 블럭
+	*/
 	array< array<int, 10>, 20> board = { 0, };
-	array< array<int, 10>, 20> before = { 0, };
+	array< array<int, 10>, 20> oldboard = { 0, };
 public:
-	void backup() { // 현재 상태를 저장하여, 나중에 출력시 다른 부분 찾는데 사용
-		before = board;
+	void backup() {
+		oldboard = board;
 	}
-	vector<int>& compare() {
-		static vector<int> defer;
-		for (unsigned int i = 0; i < board.size(); i++) {
-			for (unsigned int j = 0; j < board[0].size(); j++) {
-				if (board[i][j] != before[i][j]) defer.push_back(i * board.size() + j);
+	void deleterow(int row) {
+		for (int i = row; i > 0; i--) {
+			board[i] = board[i - 1];
+		}
+		board[0] = { 0, };
+	}
+	vector<int> compare() {
+		vector<int> collisions;
+		for (int i = 0; i < 20; i++) {
+			for (int j = 0; j < 10; j++) {
+				if (board[i][j] != oldboard[i][j]) {
+					collisions.push_back(i * 10 + j);
+				}
 			}
 		}
-		return defer;
+		return collisions;
 	}
 	array<int, 10>& operator[] (int index) {
 		return board[index];
+	}
+};
+
+class Game {
+	Block block;
+	Board board;
+	Canvas canvas = Canvas(0, 0, 30, 30);
+	array< array<int, 4>, 4> mino = { 0, };
+	array< array<int, 4>, 4> oldmino = { 0, };
+public:
+	Game() {
+		block.init();
+		canvas.DrawBorder();
+		canvas.DrawBox(1, 1, 12, 22);
+		CreateBlock();
+		view();
+		Sleep(500);
+		LowerBlock();
+		view();
+	}
+	~Game () {
+		//delete canvas;
+	}
+	void print() {
+		for (auto row : mino) {
+			for (auto e : row) {
+				printf("%d", e);
+			}
+			printf("\n");
+		}
+		for (int i = 0; i < 20; i++) {
+			for (int j = 0; j < 10; j++) {
+				printf("%d", board[i][j]);
+			}
+			printf("\n");
+		}
+
+	}
+
+	void blocktoarray() {
+		
+	}
+	void CreateBlock() {
+		board.backup();
+		block.init();
+		blocktoarray();
+		int crash = crashcheck();
+		std::cout << crash << std::endl;
+		if (crash != 1) {
+			inputblock();
+		}
+	}
+	void ShiftLeftBlock() {
+		board.backup();
+	}
+	void ShiftRightBlock() {
+
+	}
+	void LowerBlock() {
+		board.backup();
+		block.down();
+		int crash = crashcheck();
+		if (!crash) {
+			inputblock();
+		}
+	}
+	void DropBlock() {
+
+	}
+	int crashcheck() {
+		// 벽에 부딪히는 경우 : block의 인덱스가 board 범위 초과
+		// 블럭에 부딪히는 경우 : block의 인덱스와 board의 1 이상의 인덱스 충돌
+			// 본인 블럭에 부딪히는 경우 제외
+				// 이동 시, oldx, oldy
+				// 회전시, oldmino
+		int x, y, oldi, oldi;
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				x = j + block.getx();
+				oldj = x - block.getoldx();
+
+				y = i + block.gety();
+				if (mino[i][j]) {
+					if (x < 0 || x >= 10 || y < 0 || y >= 20) {
+						return -1;
+					} else if (board[y][x]) {
+						return 1;
+					}
+				}
+			}
+		}
+		return 0;
+	}
+	void removeblock() {
+		int x, y;
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				x = j + block.getx();
+				y = i + block.gety();
+				if (mino[i][j] && x >= 0 && x < 10 && y >= 0 && y < 20) {
+					board[y][x] = 0;
+				}
+			}
+		}
+	}
+	void inputblock() {
+		int x, y;
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				x = j + block.getx();
+				y = i + block.gety(); 
+				if (mino[i][j] && x >= 0 && x < 10 && y >= 0 && y < 20) {
+					board[y][x] = mino[i][j];
+				}
+			}
+		}
+	}
+	void view() {
+		vector<Dot> dots;
+		Dot dot;
+		vector<int> elements = board.compare();
+		int value;
+		array<string, 7> colors = {
+			ANSI_RESET,
+			ANSI_RED,
+			ANSI_GREEN,
+			ANSI_YELLOW,
+			ANSI_BLUE,
+			ANSI_MAGENTA,
+			ANSI_CYAN,
+		};
+		for (auto index : elements) {
+			value = board[index / 10][index % 10];
+			dot.x = index % 10 + 2;
+			dot.y = index / 10 + 2;
+			if (value) {
+				dot.color = colors[value];
+				dot.value = "■";
+			}
+			dots.push_back(dot);
+		}
+		canvas.DrawDots(dots);
 	}
 };
 
@@ -659,8 +826,7 @@ public:
 int main() {
 	//Game tetris;
 	//tetris.start();
-	Canvas board(0,0,20,20);
-	board.DrawBorder();
-	board.DrawBox(0,0,10,10);
-	board.DrawDot(0, 0, "\b", "\x1b[31m");
+
+	Game tetris;
+
 }
