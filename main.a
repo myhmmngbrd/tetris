@@ -1,217 +1,195 @@
 ﻿#include <iostream>
 #include <windows.h>
 #include <vector>
-#include <string>
+#include <array>
+#include <chrono>
 
-#define WIDTH 10
-#define HEIGHT 20
+using namespace std;
 
-class Block {
-	int box[4][4] = { 0, };
-	int x=0, y=0;
-	char type;
-public:
-	Block(char type = 0) : type(type) {
-		switch (type)
-		{
-		default:
-			box[1][1] = 1;
-			box[1][2] = 1;
-			box[2][1] = 1;
-			box[2][2] = 1;
-			break;
-		}
-	}
-	void init() {
-		x = 5;
-		y = 0;
-	}
-	void left() {
-		x--;
-	}
-	void right() {
-		x++;
-	}
-	void down() {
-		y++;
-	}
-	int ver() {
-		return y;
-	}
-	int hor() {
-		return x;
-	}
-	int* operator[] (int index) {
-		return box[index];
-	}
-};
+class Canvas {
+	int left, top, width, height;
+	void cursorview(char show)
+	{
+		HANDLE hConsole;
+		CONSOLE_CURSOR_INFO ConsoleCursor;
 
-class Board {
-	int box[20][10] = { 0, };
-public:
-	int before[20][10] = { 0, };
-	void backup() {
-		for (int i = 0; i < 20; i++) {
-			for (int j = 0; j < 10; j++) {
-				before[i][j] = box[i][j];
-			}
-		}
-	}
+		hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	void shift(int index) {
-		if (index >= 20) exit(1);
-		for (int i = index; index >= 0; i--) {
-			for (int j = 0; j < 10; j++) {
-				box[i][j] = box[i - 1][j];
-			}
-		}
-	}
-	void print() {
-		for (int i = 0; i < 20; i++) {
-			for (int j = 0; j < WIDTH; j++) {
-				printf("%d ", box[i][j]);
-			}
-			printf("\n");
-		}
-	}
-	int* operator[] (int index) {
-		return box[index];
-	}
-};
+		ConsoleCursor.bVisible = show;
+		ConsoleCursor.dwSize = 1;
 
-class Game {
-	Board board;
-	Block block;
- public:
-	Game() {
-		_COORD coord;
-		coord.X = 200;
-		coord.Y = 50;
-
-		_SMALL_RECT Rect;
-		Rect.Top = 0;
-		Rect.Left = 0;
-		Rect.Right = 200 - 1;
-		Rect.Bottom = 50 - 1;
-
-		HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
-		SetConsoleScreenBufferSize(Handle, coord);
-		SetConsoleWindowInfo(Handle, TRUE, &Rect);
-
+		SetConsoleCursorInfo(hConsole, &ConsoleCursor);
 	}
-	
 	void gotoxy(int x, int y) {
 		COORD Pos;
 		Pos.X = x;
 		Pos.Y = y;
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
 	}
-	void drawbox(int x, int y, int w, int h) {
-		/*
-		* 너비와 높이는 박스가 아닌 컨텐츠기준
-		* 좌상: ┌
-		* 좌하: └
-		* 우상: ┐
-		* 우하: ┘
-		* 가로: ─
-		* 세로: │
-		* 박스: □ ■
-		*/
-		gotoxy(x*2, y);
-		printf("┌");
-		gotoxy(x*2 + w * 2 + 2, y);
-		printf("┐");
-		gotoxy(x*2, y + h + 1);
-		printf("└");
-		gotoxy(x*2 + w * 2 + 2, y + h + 1);
-		printf("┘");
-		for (int i = 2; i <= w * 2; i = i + 2) {
-			gotoxy(x*2 + i, y);
-			printf("─");
-			gotoxy(x*2 + i, y + h + 1);
-			printf("─");
-		}
-		for (int i = 1; i <= h; i++) {
-			gotoxy(x*2, y + i);
-			printf("│");
-			gotoxy(x*2 + w * 2 + 2, y + i);
-			printf("│");
-		}
-	}
-	void start() {
-		drawbox(0, 0, 10, 20);
-		drawbox(12, 0, 4, 2);
-		CreateBlock();
-		gotoxy(25, 25);
-	}
-	void update() {
-		Sleep(500);
-		for (int i = 0; i < 20; i++) {
-			for (int j = 0; j < 10; j++) {
-				if (board[i][j] != board.before[i][j]) {
-					gotoxy(j * 2 + 2, i + 1);
-					board[i][j] ? printf("■") : printf("  ");
-				}
-			}
-		}
-		board.backup();
-	}
-	void CreateBlock() {
-		block.init();
-		InputBlock();
-		update();
-	}
-	int InputBlock() { // 충돌검사후, 충돌하면 
-		int collision = CheckCollision();
-		if (collision) {
-			return 0;
-		} else {
-			int x = block.hor();
-			int y = block.ver();
-			for (int i = 0; i < 4; i++) {
-				for (int j = 0; j < 4; j++) {
-					if ((block[i][j] > 0) && (x - 2 + j >= 0) && (y - 2 + i >= 0)) {
-						board[y - 2 + i][x - 2 + j] = 1;
-					}
-				}
-			}
-			return 1;
-		}
-	}
-	int OutputBlock() {
-
-	}
-	int CheckCollision() {
-		int x = block.hor();
-		int y = block.ver();
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				if (!block[i][j]) continue;
-				if (board[y - 2 + i][x - 2 + j] > 0) { // 충돌
-					return 1;
-				}
-			}
-		}
-		return 0;
+public:
+	Canvas(int x, int y, int w, int h) : left(x), top(y), width(w), height(h) {
+		// 마우스 커서 제거
+		cursorview(0);
 	}
 };
 
-void cursorview(char show)//커서숨기기
-{
-	HANDLE hConsole;
-	CONSOLE_CURSOR_INFO ConsoleCursor;
+array<vector<int>, 7> blocks = {
+	vector<int> { 0x00f0, 0x2222 }, // I
+	vector<int> { 0x0270, 0x0232, 0x0072, 0x0262 }, // T
+	vector<int> { 0x0660 }, // O
+	vector<int> { 0x0360, 0x0231 }, // S
+	vector<int> { 0x0c60, 0x04c8 }, // Z
+	vector<int> { 0x0470, 0x0322, 0x0071, 0x0226 }, // J
+	vector<int> { 0x02e0, 0x0446, 0x00e8, 0x0c44 } // L
+};
 
-	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+class Block {
+	int x, y;
+	int type, rotation; // type 0~6, rotation blocks[type]
+	int color; // 1~7
+	array<array<int, 4>, 4> block = { 0, };
+public:
+	array<int, 2> getPos() { return { x,y }; }
 
-	ConsoleCursor.bVisible = show;
-	ConsoleCursor.dwSize = 1;
+	void init() {
+		x = 3;
+		y = -2;
+		rotation = 0;
+		type = 1; //random
+		color = 1; //random
+	}
 
-	SetConsoleCursorInfo(hConsole, &ConsoleCursor);
+	void create() {
+		int number, hex, binary;
+		//xmax = 0, ymax = 0;
+		number = blocks[type][rotation];
+		for (int i = 0; i < 4; i++) {
+			if (hex = number % 16) {
+				//ymax++;
+			}
+			for (int j = 0; j < 4; j++) {
+				if (binary = hex % 2) {
+					//xmax++;
+				}
+				block[3 - i][3 - j] = binary * color;
+				if (hex /= 2) {
+					//xmin++;
+				}
+			}
+			number /= 16;
+		}
+	}
+
+	int rangecheck() {
+
+	}
+
+	const auto& operator[] (int index) {
+		return block[index];
+	}
+
+	void print() {
+		for (auto row : block) {
+			for (auto e : row) {
+				printf("%d", e);
+			}
+			printf("\n");
+		}
+	}
+
+};
+
+class Board {
+	array<array<int, 10>, 20> board = { 0, };
+public:
+
+
+	// 보드에 블럭 삽입
+	int input(Block& block) {
+		auto pos = block.getPos();
+		int x = pos[0];
+		int y = pos[1];
+
+		// 블럭 참조, 보드에 삽입 시 오버플로우 가능성 있음
+		for (int i = 0; i < 4; i++) {
+			// 천장을 넘어간 블럭 스킵
+			if (i + y < 0) continue;
+			for (int j = 0; j < 4; j++) {
+				// 블럭이
+				if (block[i][j]) {
+					// 바닥, 왼쪽 벽면, 오른쪽 벽면, 또는 기존 블럭과 닿은 경우
+					if (i + y >= 20 || j + x < 0 || j + x >= 10 || board[i + y][j + x]) return 0;
+					board[i + y][j + x] = block[i][j];
+				}
+			}
+		}
+
+		//정상 삽입
+		return 1;
+	}
+
+
+	// 삽입 시 이전 상태의 자신의 블럭을 구분할 방법이 없으므로 view 함수 호출 이후 자신의 블럭은 지워줘야 함
+	// 바닥에 닿은 경우, 이를 스킵하고 블럭 리셋
+	void remove(Block& block) {
+		auto pos = block.getPos();
+		int x = pos[0];
+		int y = pos[1];
+
+		// 블럭 참조, input에서 충돌검사를 했으므로 순서대로 호출한다면 오버플로우 가능성 없음
+		for (int i = 0; i < 4; i++) {
+			// 범위를 넘어간 줄 스킵
+			if (i + y < 0 || i + y >= 20) continue;
+			for (int j = 0; j < 4; j++) {
+				// 범위를 넘어간 칸 스킵
+				if (j + x < 0 || j + x >= 10) continue;
+				// 블럭값이 있다면, 삭제
+				if (block[i][j]) board[i + y][j + x] = 0;
+			}
+		}
+	}
+
+
+	void print() {
+		for (auto row : board) {
+			for (auto e : row) {
+				printf("%d", e);
+			}
+			printf("\n");
+		}
+	}
+
+};
+
+class Game {
+
+};
+
+void gotoxy(int x, int y) {
+	COORD Pos;
+	Pos.X = x;
+	Pos.Y = y;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
 }
 
 int main() {
-	Game Tetris;
-	Tetris.start();
+	Block block;
+	block.init();
+	block.create();
 
-	return 0;
+	Board board;
+	board.input(block);
+	
+	chrono::time_point<chrono::high_resolution_clock> start = 
+		chrono::high_resolution_clock::now();
+	//-------------
+	board.print();
+
+
+
+	//-------------
+	chrono::time_point<chrono::high_resolution_clock> end =
+		chrono::high_resolution_clock::now();
+	auto diff = end - start;
+	cout << chrono::duration_cast<chrono::microseconds>(diff).count() << "ms" << endl;
 }
