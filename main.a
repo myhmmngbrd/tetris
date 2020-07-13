@@ -3,8 +3,20 @@
 #include <vector>
 #include <array>
 #include <chrono>
+#include <random>
 
 using namespace std;
+
+class Random {
+	random_device seed;
+	mt19937 engine;
+	uniform_int_distribution<int> distribution;
+public:
+	Random(int min, int max) :
+		engine(mt19937(seed())),
+		distribution(uniform_int_distribution<int>(min, max)) { }
+	int get() { return distribution(engine); }
+};
 
 class Canvas {
 	int left, top, width, height;
@@ -102,14 +114,11 @@ public:
 class Board {
 	array<array<int, 10>, 20> board = { 0, };
 public:
-
-
 	// 보드에 블럭 삽입
 	int input(Block& block) {
 		auto pos = block.getPos();
 		int x = pos[0];
 		int y = pos[1];
-
 		// 블럭 참조, 보드에 삽입 시 오버플로우 가능성 있음
 		for (int i = 0; i < 4; i++) {
 			// 천장을 넘어간 블럭 스킵
@@ -123,12 +132,9 @@ public:
 				}
 			}
 		}
-
 		//정상 삽입
 		return 1;
 	}
-
-
 	// 삽입 시 이전 상태의 자신의 블럭을 구분할 방법이 없으므로 view 함수 호출 이후 자신의 블럭은 지워줘야 함
 	// 바닥에 닿은 경우, 이를 스킵하고 블럭 리셋
 	void remove(Block& block) {
@@ -149,7 +155,6 @@ public:
 		}
 	}
 
-
 	void print() {
 		for (auto row : board) {
 			for (auto e : row) {
@@ -164,14 +169,6 @@ public:
 class Game {
 
 };
-
-void gotoxy(int x, int y) {
-	COORD Pos;
-	Pos.X = x;
-	Pos.Y = y;
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
-}
-
 int main() {
 	Block block;
 	block.init();
@@ -179,13 +176,13 @@ int main() {
 
 	Board board;
 	board.input(block);
-	
-	chrono::time_point<chrono::high_resolution_clock> start = 
+	board.remove(block);
+
+	chrono::time_point<chrono::high_resolution_clock> start =
 		chrono::high_resolution_clock::now();
 	//-------------
+
 	board.print();
-
-
 
 	//-------------
 	chrono::time_point<chrono::high_resolution_clock> end =
