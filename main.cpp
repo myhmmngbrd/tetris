@@ -3,6 +3,5 @@
 
 
 int main() {
-	Canvas canvas(0,0,50,40);
-	Random rd(0, 100);
+	Game game;
 }

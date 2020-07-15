@@ -1,6 +1,8 @@
 #pragma once
 #include <random>
 #include "Canvas.h"
+#include "Block.h"
+#include "Board.h"
 
 class Random {
 	std::random_device* seed;
@@ -14,6 +16,22 @@ public:
 
 class Game {
 	Random rd{ 0, 6 };
-	Canvas canvas{ 0,0,50,40 };
+	Canvas canvas{ 0,0,20,40 };
+	Block block;
+	Block illusion;
+	Board board;
+	Board log;
+
+	int state; // 0: game over, 1: create, 2: down
+
+	void create();
+	void down();
+	void left();
+	void right();
+	void fall();
+	void rotate();
+
+public:
+	Game();
 };
 

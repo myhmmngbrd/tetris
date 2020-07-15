@@ -36,6 +36,34 @@ const std::array<int, 4>& Block::operator[] (int index) {
 	return block[index];
 }
 
+void Block::up(int add) {
+	y -= add;
+}
+
+void Block::down(int add) {
+	y += add;
+}
+
+void Block::left(int add) {
+	x -= add;
+}
+
+void Block::right(int add) {
+	x += add;
+}
+
+void Block::rotate() {
+	if (++rotation == blocks[type].size()) {
+		rotation = 0;
+	}
+}
+
+void Block::rotateback() {
+	if (--rotation < 0) {
+		rotation = blocks[type].size() - 1;
+	}
+}
+
 void Block::print() {
 	for (auto row : block) {
 		for (auto e : row) {
