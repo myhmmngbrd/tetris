@@ -24,6 +24,9 @@ class Game {
 
 	int state; // 0: game over, 1: create, 2: down
 
+	const int& x = block.getrefX();
+	const int& y = block.getrefY();
+
 	void create();
 	void down();
 	void left();

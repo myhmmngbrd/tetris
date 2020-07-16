@@ -1,5 +1,6 @@
 #include "Game.h"
 #include <windows.h>
+#include <iostream>
 
 #define GAMEOVER 0
 #define START 1
@@ -18,22 +19,29 @@ Random::~Random() {
 int Random::get() { return distribution(*engine); }
 
 void Game::create() {
-	block.init(rd.get(), rd.get() + 1);
+	int type = rd.get();
+	int color = rd.get() + 1;
+	block.init(type, color);
 	block.create();
 	block.down();
-	int result = board.input(block);
-	if (result) {
+	illusion.init(type, 8);
+	illusion.create();
+	illusion.down();
+	int collision = board.input(block, x, y);
+	if (!collision) {
+		// 입력 성공시 지우고 한칸 위에 다시 입력
 		state = RUN;
-		board.remove(block);
+		board.remove(block, x, y);
 		block.up();
-		board.input(block);
+		board.input(block, x, y);
 		system("cls");
 		board.print();
-		board.remove(block);
-	} else if (!result) {
+		board.remove(block, x, y);
+	} else if (collision) {
+		// 입력 실패시 게임오버. 지우고 다시 입력. 실패여부는 굳이 확인하지 않음
 		state = GAMEOVER;
 		block.up();
-		board.input(block);
+		board.input(block, x, y);
 		system("cls");
 		board.print();
 	}
@@ -41,20 +49,20 @@ void Game::create() {
 
 void Game::down() {
 	block.down(2); // 2단계 하락
-	int result = board.input(block);
-	if (result) {
+	int collision = board.input(block, x, y);
+	if (!collision) {
 		// 입력 성공시 지우고 한칸 위에 다시 입력
-		board.remove(block);
+		board.remove(block, x, y);
 		block.up();
-		board.input(block);
+		board.input(block, x, y);
 		system("cls");
 		board.print();
-		board.remove(block);
+		board.remove(block, x, y);
 	}
-	else if (!result) {
+	else if (collision) {
 		// 입력 실패시 한칸 위에 재입력 / 지우지 말고 새 블럭 호출
 		block.up();
-		board.input(block);
+		board.input(block, x, y);
 		system("cls");
 		board.print();
 		state = START;
@@ -64,33 +72,44 @@ void Game::down() {
 
 void Game::left() {
 	block.left();
-	int result = board.input(block);
-	if (result) {
+	int collision = board.input(block, x, y);
+	if (!collision) {
 		system("cls");
 		board.print();
-		board.remove(block);
+		board.remove(block, x, y);
 	}
 }
 
 void Game::right() {
 	block.right();
-	int result = board.input(block);
-	if (result) {
+	int collision = board.input(block, x, y);
+	if (!collision) {
 		system("cls");
 		board.print();
-		board.remove(block);
+		board.remove(block, x, y);
 	}
+}
+
+void Game::fall() {
+	int collision;
+	block.fall();
+	while ((collision = board.input(block, x, y))) {
+		block.up();
+	}
+	system("cls");
+	board.print();
+	state = START;
 }
 
 void Game::rotate() {
 	block.rotate();
 	block.create();
-	int result = board.input(block);
-	if (result) {
+	int collision = board.input(block, x, y);
+	if (!collision) {
 		system("cls");
 		board.print();
-		board.remove(block);
-	} else if (!result) {
+		board.remove(block, x, y);
+	} else if (collision) {
 		block.rotateback();
 		block.create();
 	}
@@ -103,47 +122,40 @@ Game::Game() {
 
 	create();
 
-	Sleep(300);
-	system("cls");
-	block.down();
-	board.input(block);
-	board.print();
-	board.remove(block);
+	Sleep(1000);
+	down();
 
-	Sleep(300);
-	system("cls");
-	block.left();
-	board.input(block);
-	board.print();
-	board.remove(block);
+	Sleep(1000);
+	down();
+
+	Sleep(1000);
+	left();
 
 
-	Sleep(300);
-	system("cls");
-	block.right();
-	board.input(block);
-	board.print();
-	board.remove(block);
+	Sleep(1000);
+	left();
 
-	Sleep(300);
-	system("cls");
-	block.down();
-	board.input(block);
-	board.print();
-	board.remove(block);
+	Sleep(1000);
+	right();
 
-	Sleep(300);
-	system("cls");
-	block.down();
-	board.input(block);
-	board.print();
-	board.remove(block);
+	Sleep(1000);
+	right();
 
-	Sleep(300);
-	system("cls");
-	block.rotate();
-	block.create();
-	board.input(block);
-	board.print();
-	board.remove(block);
+	Sleep(1000);
+	down();
+
+	Sleep(1000);
+	down();
+
+	Sleep(1000);
+	rotate();
+	
+	Sleep(1000);
+	rotate();
+
+	Sleep(1000);
+	rotate();
+
+	Sleep(1000);
+	fall();
 }

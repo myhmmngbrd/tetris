@@ -18,16 +18,20 @@ class Block {
 	int color; // 1~7
 	std::array<std::array<int, 4>, 4> block = { 0, };
 public:
-	std::array<int, 2> getPos();
+	int getX();
+	int getY();
+	const int& getrefX();
+	const int& getrefY();
 	void init(int type, int color);
 	void create();
 	const std::array<int, 4>& operator[] (int index);
-	void up(int = 1);
-	void down(int = 1);
-	void left(int = 1);
-	void right(int = 1);
-	void rotate();
-	void rotateback();
+	int up(int = 1);
+	int down(int = 1);
+	int left(int = 1);
+	int right(int = 1);
+	int fall();
+	int rotate();
+	int rotateback();
 	void print();
 };
 

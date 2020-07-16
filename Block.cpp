@@ -1,7 +1,11 @@
 #include "Block.h"
 
 
-std::array<int, 2> Block::getPos() { return { x,y }; }
+int Block::getX() { return x; }
+int Block::getY() { return y; }
+const int& Block::getrefX() { return x; }
+const int& Block::getrefY() { return y; }
+
 
 void Block::init(int type, int color) {
 	x = 3;
@@ -36,32 +40,35 @@ const std::array<int, 4>& Block::operator[] (int index) {
 	return block[index];
 }
 
-void Block::up(int add) {
-	y -= add;
+int Block::up(int add) {
+	return y -= add;
+}
+int Block::down(int add) {
+	return y += add;
+}
+int Block::left(int add) {
+	return x -= add;
+}
+int Block::right(int add) {
+	return x += add;
 }
 
-void Block::down(int add) {
-	y += add;
+int Block::fall() {
+	return y = 18;
 }
 
-void Block::left(int add) {
-	x -= add;
-}
-
-void Block::right(int add) {
-	x += add;
-}
-
-void Block::rotate() {
+int Block::rotate() {
 	if (++rotation == blocks[type].size()) {
 		rotation = 0;
 	}
+	return rotation;
 }
 
-void Block::rotateback() {
+int Block::rotateback() {
 	if (--rotation < 0) {
 		rotation = blocks[type].size() - 1;
 	}
+	return rotation;
 }
 
 void Block::print() {
