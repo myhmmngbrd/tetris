@@ -10,7 +10,7 @@ int Board::inputcheck(Block& block, int x, int y) {
 				// 블럭이 벽면에 닿음
 				else if (j + x < 0 || j + x >= 10) return 2;
 				// 블럭이 블럭에 닿음
-				else if (board[i + y][j + x]) return 3; 
+				else if (board[i + y][j + x] && board[i + y][j + x] < 8) return 3; 
 			}
 		}
 	}

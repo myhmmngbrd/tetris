@@ -26,7 +26,10 @@ void Game::create() {
 	block.down();
 	illusion.init(type, 8);
 	illusion.create();
-	illusion.down();
+	illusion.fall();
+	while (board.input(illusion, illusion.getX(), illusion.getY())) {
+		illusion.up();
+	}
 	int collision = board.input(block, x, y);
 	if (!collision) {
 		// 입력 성공시 지우고 한칸 위에 다시 입력
