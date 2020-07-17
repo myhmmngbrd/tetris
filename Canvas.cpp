@@ -1,13 +1,33 @@
 #include "Canvas.h"
-#include<iostream>
-#include <windows.h>
 
 
-Canvas::Canvas(int x, int y, int w, int h) : left(x), top(y), width(w), height(h) {
+Canvas::Canvas(int x, int y, int w, int h) : left(x), top(y), width(w), height(h),
+	t([this]() {
+		Dots dots;
+		while (1) {
+			//*
+			if (log.size()) {
+				dots = this->log.front();
+				if (dots.size()) {
+					for (Dot dot : dots) {
+						gotoxy(dot[0], dot[1]);
+						dot[2] > 0 ?
+							printf("\x1b[3%dm" "бс" "\x1b[0m", dot[2] % 7 + 1) :
+							dot[2] == 0 ? printf("  ") : printf("бр");
+					}
+					log.pop_front();
+				}
+			}
+			//*/
+			Sleep(33);
+		}
+	})
+{
 	cursorview(0);
 }
 
 Canvas::~Canvas() {
+	t.join();
 	gotoxy(0, left + height);
 }
 
@@ -64,4 +84,20 @@ void Canvas::DrawBox(int x, int y, int w, int h) {
 
 
 
+}
+
+void Canvas::push(Dots dots) {
+	log.push_back(dots);
+}
+
+void Canvas::PushString(int x, int y, std::string str) {
+
+}
+
+void Canvas::print() {
+	for (Dots dots : log) {
+		for (Dot dot : dots) {
+			printf("x: %d, y: %d, color: %d\n", dot[0], dot[1], dot[2]);
+		}
+	}
 }

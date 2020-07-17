@@ -1,6 +1,8 @@
 #include "Game.h"
 #include <windows.h>
 #include <iostream>
+#include <conio.h>
+#include <chrono>
 
 #define GAMEOVER 0
 #define START 1
@@ -23,51 +25,33 @@ void Game::create() {
 	int color = rd.get() + 1;
 	block.init(type, color);
 	block.create();
-	block.down();
-	illusion.init(type, 8);
-	illusion.create();
-	illusion.fall();
-	while (board.input(illusion, illusion.getX(), illusion.getY())) {
-		illusion.up();
-	}
-	int collision = board.input(block, x, y);
+
+
+	int collision = board.input(block, bx, by);
 	if (!collision) {
-		// 입력 성공시 지우고 한칸 위에 다시 입력
+		illusion.init(type, -1);
+		ifall();
 		state = RUN;
-		board.remove(block, x, y);
-		block.up();
-		board.input(block, x, y);
-		system("cls");
-		board.print();
-		board.remove(block, x, y);
-	} else if (collision) {
-		// 입력 실패시 게임오버. 지우고 다시 입력. 실패여부는 굳이 확인하지 않음
+		view();
+		board.remove(block, bx, by);
+	} else if (collision) {;
+		view();
 		state = GAMEOVER;
-		block.up();
-		board.input(block, x, y);
-		system("cls");
-		board.print();
 	}
 }
 
 void Game::down() {
-	block.down(2); // 2단계 하락
-	int collision = board.input(block, x, y);
+	block.down();
+	int collision = board.input(block, bx, by);
 	if (!collision) {
-		// 입력 성공시 지우고 한칸 위에 다시 입력
-		board.remove(block, x, y);
+		view();
+		board.remove(block, bx, by);
+	} else if (collision) {
 		block.up();
-		board.input(block, x, y);
-		system("cls");
-		board.print();
-		board.remove(block, x, y);
-	}
-	else if (collision) {
-		// 입력 실패시 한칸 위에 재입력 / 지우지 말고 새 블럭 호출
-		block.up();
-		board.input(block, x, y);
-		system("cls");
-		board.print();
+		board.input(block, bx, by);
+		board.solid(block, bx, by);
+		board.clearcheck();
+		view();
 		state = START;
 	}
 }
@@ -75,47 +59,88 @@ void Game::down() {
 
 void Game::left() {
 	block.left();
-	int collision = board.input(block, x, y);
+
+
+	int collision = board.input(block, bx, by);
 	if (!collision) {
-		system("cls");
-		board.print();
-		board.remove(block, x, y);
+		ifall();
+		view();
+		board.remove(block, bx, by);
+	}
+	else {
+		block.right();
 	}
 }
 
 void Game::right() {
 	block.right();
-	int collision = board.input(block, x, y);
+
+
+	int collision = board.input(block, bx, by);
 	if (!collision) {
-		system("cls");
-		board.print();
-		board.remove(block, x, y);
+		ifall();
+		view();
+		board.remove(block, bx, by);
+	}
+	else {
+		block.left();
 	}
 }
 
 void Game::fall() {
-	int collision;
-	block.fall();
-	while ((collision = board.input(block, x, y))) {
-		block.up();
+	while (!board.input(block, bx, by)) { // input시 충돌이 없으면
+		board.remove(block, bx, by);
+		block.down();
 	}
-	system("cls");
-	board.print();
+	block.up();
+	board.input(block, bx, by);
+	board.solid(block, bx, by);
+	board.clearcheck();
+	view();
 	state = START;
+	cv.notify_one();
 }
 
 void Game::rotate() {
 	block.rotate();
 	block.create();
-	int collision = board.input(block, x, y);
+
+	int collision = board.input(block, bx, by);
 	if (!collision) {
-		system("cls");
-		board.print();
-		board.remove(block, x, y);
+		ifall();
+		view();
+		board.remove(block, bx, by);
 	} else if (collision) {
 		block.rotateback();
 		block.create();
 	}
+}
+
+void Game::ifall() {
+	board.remove(illusion, ix, iy);
+	illusion = block;
+	illusion.create();
+	while (!board.input(illusion, ix, iy)) {
+		board.remove(illusion, ix, iy);
+		illusion.down();
+	}
+	illusion.up();
+	board.input(illusion, ix, iy);
+}
+
+void Game::view() {
+	Dot dot;
+	Dots dots;
+	for (int i = 0; i < 20; i++) {
+		for (int j = 0; j < 10; j++) {
+			if (log[i][j] != board[i][j]) {
+				dot = { j + 1, i + 1, board[i][j] };
+				dots.push_back(dot);
+				log[i][j] = board[i][j];
+			}
+		}
+	}
+	if (dots.size()) canvas.push(dots);
 }
 
 
@@ -123,42 +148,46 @@ void Game::rotate() {
 Game::Game() {
 	canvas.DrawBox(0, 0, 12, 22);
 
-	create();
+	thread t([this]() {
+		int key;
+		while (1) {
+			key = _getch();
+			if (key && this->state == RUN) {
+				switch (key) {
+				case 75:
+					this->left();
+					break;
+				case 77:
+					this->right();
+					break;
+				case 80:
+					this->down();
+					break;
+				case 32:
+					this->fall();
+					break;
+				case 72:
+					this->rotate();
+					break;
+				default:
+					break;
+				}
+			}
+		}
+	});
 
-	Sleep(1000);
-	down();
 
-	Sleep(1000);
-	down();
+	do {
+		create();
+		do {
+			unique_lock<mutex> lk(m);
+			cv.wait_for(lk, chrono::milliseconds(1000) , [this]() { return this->state == START; });
+			if (this->state == START) break;
+			down();
+		} while (state == RUN);
+		Sleep(50);
+	} while (state == START);
 
-	Sleep(1000);
-	left();
+	t.join();
 
-
-	Sleep(1000);
-	left();
-
-	Sleep(1000);
-	right();
-
-	Sleep(1000);
-	right();
-
-	Sleep(1000);
-	down();
-
-	Sleep(1000);
-	down();
-
-	Sleep(1000);
-	rotate();
-	
-	Sleep(1000);
-	rotate();
-
-	Sleep(1000);
-	rotate();
-
-	Sleep(1000);
-	fall();
 }

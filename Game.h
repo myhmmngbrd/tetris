@@ -1,5 +1,6 @@
 #pragma once
 #include <random>
+#include <mutex>
 #include "Canvas.h"
 #include "Block.h"
 #include "Board.h"
@@ -23,16 +24,24 @@ class Game {
 	Board log;
 
 	int state; // 0: game over, 1: create, 2: down
+	condition_variable cv;
+	mutex m;
+	
+	const int& bx = block.getrefX();
+	const int& by = block.getrefY();
 
-	const int& x = block.getrefX();
-	const int& y = block.getrefY();
+	const int& ix = illusion.getrefX();
+	const int& iy = illusion.getrefY();
 
 	void create();
 	void down();
 	void left();
 	void right();
 	void fall();
+	void ifall();
 	void rotate();
+
+	void view();
 
 public:
 	Game();

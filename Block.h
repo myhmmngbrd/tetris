@@ -25,13 +25,13 @@ public:
 	void init(int type, int color);
 	void create();
 	const std::array<int, 4>& operator[] (int index);
-	int up(int = 1);
-	int down(int = 1);
-	int left(int = 1);
-	int right(int = 1);
-	int fall();
-	int rotate();
-	int rotateback();
-	void print();
+	Block& operator=(Block&);
+	void up();
+	void down();
+	void left();
+	void right();
+	void fall();
+	void rotate();
+	void rotateback();
 };
 
