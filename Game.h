@@ -15,13 +15,28 @@ public:
 	int get();
 };
 
+class Bucket : public Random {
+	std::array<int, 7> bucket;
+	int index = 0;
+	void create();
+public:
+	Bucket(int min, int max);
+	int ref();
+	int pop();
+};
+
+
 class Game {
-	Random rd{ 0, 6 };
+	Bucket type{ 0, 6 };
+	Bucket color{ 1, 7 };
 	Canvas canvas{ 0,0,20,40 };
 	Block block;
 	Block illusion;
+	Block next;
 	Board board;
 	Board log;
+
+	std::array<int, 7> bucket;
 
 	int state; // 0: game over, 1: create, 2: down
 	condition_variable cv;

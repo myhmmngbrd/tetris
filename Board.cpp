@@ -28,7 +28,7 @@ int Board::input(Block& block, int x, int y) {
 		if (i + y < 0 || i + y >= 20) continue;
 		for (int j = 0; j < 4; j++) {
 			// 투명블럭은 블럭이 생성된 자리에 생기는경우가 있으므로 겹치는 경우가 생김
-			if (block[i][j] && !board[i + y][j + x]) board[i + y][j + x] = block[i][j];
+			if (block[i][j] && board[i + y][j + x] <= 0) board[i + y][j + x] = block[i][j];
 		}
 	}
 	//정상 삽입

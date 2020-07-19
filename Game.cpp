@@ -20,12 +20,69 @@ Random::~Random() {
 
 int Random::get() { return distribution(*engine); }
 
+
+Bucket::Bucket(int min, int max) : Random(min, max) {
+	create();
+}
+
+void Bucket::create() {
+	int n, exist;
+	for (unsigned int i = 0; i < bucket.size(); i++) {
+		do {
+			exist = 0;
+			n = get();
+			for (unsigned int j = 0; j < i; j++) {
+				if (bucket[j] == n) {
+					exist = 1;
+					break;
+				}
+			}
+		} while (exist);
+		bucket[i] = n;
+	}
+}
+
+int Bucket::pop() {
+	int n, exist, result;
+	if (index == bucket.size()) index = 0;
+	result = bucket[index];
+	do {
+		exist = 0;
+		n = get();
+		for (unsigned int j = 0; j < index; j++) {
+			if (bucket[j] == n) {
+				exist = 1;
+				break;
+			}
+		}
+	} while (exist);
+	bucket[index] = n;
+	index++;
+	return result;
+}
+
+int Bucket::ref() {
+	return bucket[index == bucket.size() ? 0 : index];
+}
+
 void Game::create() {
-	int type = rd.get();
-	int color = rd.get() + 1;
+	int type = this->type.pop();
+	int color = this->color.pop();
 	block.init(type, color);
 	block.create();
 
+
+	Dot dot;
+	Dots dots;
+	next.init(this->type.ref(), this->color.ref());
+	next.create();
+	for (int i = 1; i < 3; i++) {
+		for (int j = 0; j < 4; j++) {
+				dot = { 13 + j, i+1, next[i][j] };
+				dots.push_back(dot);
+		}
+	}
+	if (dots.size()) canvas.push(dots);
 
 	int collision = board.input(block, bx, by);
 	if (!collision) {
@@ -147,6 +204,7 @@ void Game::view() {
 
 Game::Game() {
 	canvas.DrawBox(0, 0, 12, 22);
+	canvas.DrawBox(12, 0, 6, 5);
 
 	thread t([this]() {
 		int key;
