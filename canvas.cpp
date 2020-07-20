@@ -31,6 +31,7 @@ Canvas::Canvas(int x, int y, int w, int h, std::mutex* m) :
 	canvas_height(h), 
 	t([this](std::mutex* m) {
 		while (1) {
+			//*
 			std::unique_lock<std::mutex> lk(*m);
 			this->cv.wait(lk, [this]() {return this->log.size(); });
 			lk.unlock();
@@ -41,6 +42,8 @@ Canvas::Canvas(int x, int y, int w, int h, std::mutex* m) :
 					printf("%s", dot.value.c_str());
 				}
 			}
+			//*/
+			Sleep(33);
 		}
 	}, m) {
 	cursorview(0); //커서 삭제
@@ -48,6 +51,7 @@ Canvas::Canvas(int x, int y, int w, int h, std::mutex* m) :
 //소멸자
 Canvas::~Canvas() {
 	gotoxy(0, canvas_top + canvas_height + 1);
+	t.join();
 }
 
 void Canvas::push(int x, int y, std::string value) {
