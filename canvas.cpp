@@ -1,6 +1,5 @@
 #include "canvas.h"
 
-
 //private
 void Canvas::cursorview(char show) {
 	HANDLE hConsole;
@@ -16,8 +15,8 @@ void Canvas::cursorview(char show) {
 
 void Canvas::gotoxy(int x, int y) {
 	COORD Pos;
-	Pos.X = x * 2;
-	Pos.Y = y;
+	Pos.X = (canvas_left + x) * 2;
+	Pos.Y = canvas_top + y;
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
 }
 
@@ -31,16 +30,17 @@ Canvas::Canvas(int x, int y, int w, int h, std::mutex* m) :
 	canvas_height(h), 
 	t([this](std::mutex* m) {
 		while (1) {
-			//*
-			std::unique_lock<std::mutex> lk(*m);
-			this->cv.wait(lk, [this]() {return this->log.size(); });
-			lk.unlock();
+			{
+				std::unique_lock<std::mutex> lk(*m);
+				this->cv.wait(lk, [this]() {return this->log.size(); });
+			}
 			if (this->log.front().size()) {
 				std::deque<Dot>& dots = this->log.front();
 				for (Dot& dot : dots) {
 					gotoxy(dot.x, dot.y);
 					printf("%s", dot.value.c_str());
 				}
+				this->log.pop_front();
 			}
 			//*/
 			Sleep(33);

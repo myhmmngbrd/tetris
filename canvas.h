@@ -34,3 +34,6 @@ public:
 	void push(int, int, std::string);
 	void draw();
 };
+
+//공기청정기 필터
+//재산세

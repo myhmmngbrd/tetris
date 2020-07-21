@@ -140,9 +140,11 @@
   <ItemGroup>
     <ClInclude Include="block.h" />
     <ClInclude Include="canvas.h" />
+    <ClInclude Include="game.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="canvas.cpp" />
+    <ClCompile Include="game.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
