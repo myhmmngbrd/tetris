@@ -32,6 +32,9 @@ int main() {
 		canvas_height = 30;
 	Canvas canvas(canvas_left, canvas_top, canvas_width, canvas_height, &m);
 	pushbox(canvas, 0, 0, 12, 22);
-	canvas.push(2,2,"\x1b[37mбс\x1b[0mбс");
+	std::string value = RED;
+	value += "бс";
+	value += RESET;
+	canvas.push(2,2,value);
 	canvas.draw();
 }
