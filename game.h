@@ -13,25 +13,40 @@ const std::array<std::vector<int>, 7> blocks = {
 
 class Block {
 	int x, y, 
-		rotation, 
-		type, // 0 ~ 6 
-		color; // 1 ~ 7
-	std::array<std::array<int, 4>, 4> block;
+		rotation = 0, 
+		type = 0, // 0 ~ 6 
+		color = 1; // 1 ~ 7
+	std::array<std::array<int, 4>, 4> block = { 0, };
 public:
 	int getX();
 	int getY();
+	const int& getRefX();
+	const int& getRefY();
 	void up();
 	void down();
 	void left();
 	void right();
 	void rotate();
-	void counterrotate()
+	void counterRotate();
+	void createBlock();
+
+	const std::array<int, 4>& operator[] (int);
+
+	void print();
 };
 
 
 class Board {
+	std::array<std::array<int, 10>, 20> board = { 0, };
 public:
-	int 
+	int checkCollision(Block&, int, int);
+	int inputBlock(Block&, int, int);
+	void removeBlock(Block&, int, int);
+	void hardenBlock(Block&, int, int);
+
+	std::array<int, 10>& operator[] (int);
+	
+	void print();
 };
 
 class Game {

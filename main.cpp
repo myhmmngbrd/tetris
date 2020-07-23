@@ -1,4 +1,5 @@
 #include "canvas.h"
+#include "game.h"
 
 #define RED "\x1b[31m"
 #define GREEN "\x1b[32m"
@@ -25,16 +26,7 @@ void pushbox(Canvas& canvas, int x, int y, int w, int h) {
 }
 
 int main() {
-	std::mutex m;
-	int canvas_left = 10,
-		canvas_top = 5,
-		canvas_width = 30,
-		canvas_height = 30;
-	Canvas canvas(canvas_left, canvas_top, canvas_width, canvas_height, &m);
-	pushbox(canvas, 0, 0, 12, 22);
-	std::string value = RED;
-	value += "бс";
-	value += RESET;
-	canvas.push(2,2,value);
-	canvas.draw();
+	Block block;
+	block.createBlock();
+	
 }
