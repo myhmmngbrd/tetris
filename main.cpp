@@ -27,6 +27,14 @@ void pushbox(Canvas& canvas, int x, int y, int w, int h) {
 
 int main() {
 	Block block;
+	Board board;
+	const int& x = block.getRefX();
+	const int& y = block.getRefY();
 	block.createBlock();
-	
+	block.init();
+	block.down();
+	block.down();
+	board.inputBlock(block, x, y);
+	block.print();
+	board.print();
 }

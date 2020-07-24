@@ -22,6 +22,7 @@ public:
 	int getY();
 	const int& getRefX();
 	const int& getRefY();
+	void init();
 	void up();
 	void down();
 	void left();
@@ -43,6 +44,7 @@ public:
 	int inputBlock(Block&, int, int);
 	void removeBlock(Block&, int, int);
 	void hardenBlock(Block&, int, int);
+	
 
 	std::array<int, 10>& operator[] (int);
 	

@@ -2,6 +2,13 @@
 
 
 //block
+void Block::init() {
+	x = 3;
+	y = -2;
+	type = 0;
+	rotation = 0;
+	color = 1;
+}
 int Block::getX() { return x; }
 int Block::getY() { return y; }
 const int& Block::getRefX() { return x; }
@@ -69,8 +76,9 @@ int Board::inputBlock(Block& block, int x, int y) {
 		if (i + y < 0 || i + y > 19) continue; // ÃµÀåÀÌ³ª ¹Ù´Ú¿¡ ´êÀ¸¸é ½ºÅµ
 		for (int j = 0; j < 4; j++) {
 			if (j + x < 0 || j + x > 9) continue; // º®¿¡ ´êÀ¸¸é ½ºÅµ
-			if (block[i][j] && board[i + y][j + x] <= 0)
-				board[i + y][j + x] = board[i][j];
+			if (block[i][j] && board[i + y][j + x] <= 0) {
+				board[i + y][j + x] = block[i][j];
+			}
 		}
 	}
 	return 1;
@@ -87,7 +95,13 @@ void Board::removeBlock(Block& block, int x, int y) {
 	}
 }
 void Board::hardenBlock(Block& block, int x, int y) {
-
+	for (int i = 0; i < 4; i++) {
+		if (i + y < 0 || i + y > 19) continue;
+		for (int j = 0; j < 4; j++) {
+			if (j + x < 0 || j + x > 19) continue;
+			if (block[i][j]) board[i + y][j + x] += 7;
+		}
+	}
 }
 
 
