@@ -45,6 +45,14 @@ public:
 	void removeBlock(Block&, int, int);
 	void hardenBlock(Block&, int, int);
 	
+	void clear(int);
+	void checkClear();
+
+	int down(Block&, const int&, const int&);
+	int left(Block&, const int&, const int&);
+	int right(Block&, const int&, const int&);
+	int fall(Block&, const int&, const int&);
+	int rotate(Block&, int, int);
 
 	std::array<int, 10>& operator[] (int);
 	

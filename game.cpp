@@ -88,7 +88,7 @@ void Board::removeBlock(Block& block, int x, int y) {
 		if (i + y < 0 || i + y > 19) continue;
 		for (int j = 0; j < 4; j++) {
 			if (j + x < 0 || j + x > 9) continue;
-			if (block[i][j] > 0) board[i + y][j + x] = 0;
+			if (block[i][j] > 0 && board[i + y][j + x] < 8) board[i + y][j + x] = 0;
 			else if (block[i][j] < 0 && board[i + y][j + x] < 0)
 				board[i + y][j + x] = 0;
 		}
@@ -100,6 +100,76 @@ void Board::hardenBlock(Block& block, int x, int y) {
 		for (int j = 0; j < 4; j++) {
 			if (j + x < 0 || j + x > 19) continue;
 			if (block[i][j]) board[i + y][j + x] += 7;
+		}
+	}
+}
+
+void Board::clear(int index) {
+	for (int i = index; i > 0; i--) {
+		board[i] = board[i - 1];
+	}
+	board[0] = { 0, };
+}
+void Board::checkClear() {
+	int hole;
+	for (int i = 0; i < 20; i++) {
+		hole = 0;
+		for (auto col : board[i]) {
+			if (col < 1) {
+				hole = 1;
+				break;
+			}
+		}
+		if (!hole) clear(i);
+	}
+}
+
+int Board::down(Block& block, const int& x, const int& y) {
+	int error = checkCollision(block, x, y + 1);
+	if (error) {
+		hardenBlock(block, x, y);
+		checkClear();
+		return 0;
+	} else {
+		removeBlock(block, x, y);
+		block.down();
+		inputBlock(block, x, y);
+		return 1;
+	}
+}
+int Board::left(Block& block, const int& x, const int& y) {
+	int error = checkCollision(block, x - 1, y);
+	if (error) {
+;		return 0;
+	} else {
+		removeBlock(block, x, y);
+		block.left();
+		inputBlock(block, x, y);
+		return 1;
+	}
+}
+int Board::right(Block& block, const int& x, const int& y) {
+	int error = checkCollision(block, x + 1, y);
+	if (error) {
+		return 0;
+	} else {
+		removeBlock(block, x, y);
+		block.right();
+		inputBlock(block, x, y);
+		return 1;
+	}
+}
+int Board::fall(Block& block, const int& x, const int& y) {
+	block.down();
+	int error = checkCollision(block, x, y);
+	if (error) {
+		block.up();
+		error = checkCollision(block, x, y);
+		if (error) {
+			return 0;
+		} else {
+			inputBlock(block, x, y);
+			return 1;
 		}
 	}
 }
