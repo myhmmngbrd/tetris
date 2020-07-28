@@ -30,11 +30,8 @@ int main() {
 	Board board;
 	const int& x = block.getRefX();
 	const int& y = block.getRefY();
-	block.createBlock();
-	block.init();
-	block.down();
-	block.down();
-	board.inputBlock(block, x, y);
-	block.print();
+	board.createBlock(block, 0);
+	board.down(block, x, y);
+	board.down(block, x, y);
 	board.print();
 }

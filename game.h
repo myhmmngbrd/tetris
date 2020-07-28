@@ -22,7 +22,7 @@ public:
 	int getY();
 	const int& getRefX();
 	const int& getRefY();
-	void init();
+	void init(int);
 	void up();
 	void down();
 	void left();
@@ -48,6 +48,7 @@ public:
 	void clear(int);
 	void checkClear();
 
+	int createBlock(Block&, int);
 	int down(Block&, const int&, const int&);
 	int left(Block&, const int&, const int&);
 	int right(Block&, const int&, const int&);

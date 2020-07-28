@@ -2,10 +2,10 @@
 
 
 //block
-void Block::init() {
+void Block::init(int type) {
 	x = 3;
 	y = -2;
-	type = 0;
+	this->type = type;
 	rotation = 0;
 	color = 1;
 }
@@ -65,7 +65,7 @@ int Board::checkCollision(Block& block, int x, int y) {
 			if (block[i][j]) {
 				if (i + y > 19) return 1; // 바닥에 충돌
 				else if (j + x < 0 || j + x > 9) return 2; // 벽에 충돌
-				else if (board[i + y][j + x] > 7) return 3; // 다른 블럭에 충돌
+				else if (i + y >= 0 && board[i + y][j + x] > 7) return 3; // 다른 블럭에 충돌
 			}
 		}
 	}
@@ -124,6 +124,18 @@ void Board::checkClear() {
 	}
 }
 
+int Board::createBlock(Block& block, int type) {
+	block.init(type);
+	block.createBlock();
+	int error = checkCollision(block, 3, -2);
+	if (error) {
+		return 0;
+	}
+	else {
+		inputBlock(block, 3, -2);
+		return 1;
+	}
+}
 int Board::down(Block& block, const int& x, const int& y) {
 	int error = checkCollision(block, x, y + 1);
 	if (error) {
@@ -160,10 +172,9 @@ int Board::right(Block& block, const int& x, const int& y) {
 	}
 }
 int Board::fall(Block& block, const int& x, const int& y) {
-	block.down();
-	int error = checkCollision(block, x, y);
+	removeBlock(block, x, y);
+	int error = checkCollision(block, x, y + 1);
 	if (error) {
-		block.up();
 		error = checkCollision(block, x, y);
 		if (error) {
 			return 0;
@@ -171,6 +182,22 @@ int Board::fall(Block& block, const int& x, const int& y) {
 			inputBlock(block, x, y);
 			return 1;
 		}
+	} else {
+		block.down();
+		return fall(block, x, y);
+	}
+}
+int Board::rotate(Block& block, int x, int y) {
+	removeBlock(block, x, y);
+	block.rotate();
+	int error = checkCollision(block, x, y);
+	if (error) {
+		block.counterRotate();
+		return 0;
+	}
+	else {
+		inputBlock(block, x, y);
+		return 1;
 	}
 }
 
