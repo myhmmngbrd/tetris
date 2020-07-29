@@ -18,10 +18,8 @@ void Block::down() { y++; }
 void Block::left() { x--; }
 void Block::right() { x++; }
 void Block::rotate() { 
-	if (rotation == blocks[type].size()) {
+	if (++rotation == blocks[type].size()) {
 		rotation = 0;
-	} else {
-		rotation++;
 	}
 }
 void Block::counterRotate() {
@@ -180,6 +178,8 @@ int Board::fall(Block& block, const int& x, const int& y) {
 			return 0;
 		} else {
 			inputBlock(block, x, y);
+			hardenBlock(block, x, y);
+			checkClear();
 			return 1;
 		}
 	} else {
@@ -190,9 +190,11 @@ int Board::fall(Block& block, const int& x, const int& y) {
 int Board::rotate(Block& block, int x, int y) {
 	removeBlock(block, x, y);
 	block.rotate();
+	block.createBlock();
 	int error = checkCollision(block, x, y);
 	if (error) {
 		block.counterRotate();
+		block.createBlock();
 		return 0;
 	}
 	else {
@@ -200,7 +202,6 @@ int Board::rotate(Block& block, int x, int y) {
 		return 1;
 	}
 }
-
 
 std::array<int, 10>& Board::operator[] (int index) {
 	return board[index];
@@ -214,3 +215,5 @@ void Board::print() {
 		printf("\n");
 	}
 }
+
+

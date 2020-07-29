@@ -33,5 +33,13 @@ int main() {
 	board.createBlock(block, 0);
 	board.down(block, x, y);
 	board.down(block, x, y);
+	board.down(block, x, y);
+	board.right(block, x, y);
+	board.left(block, x, y);
+	board.rotate(block, x, y);
+	board.rotate(block, x, y);
+	board.fall(block, x, y);
+	board.createBlock(block, 1);
+	board.fall(block, x, y);
 	board.print();
 }
