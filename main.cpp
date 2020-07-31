@@ -26,20 +26,5 @@ void pushbox(Canvas& canvas, int x, int y, int w, int h) {
 }
 
 int main() {
-	Block block;
-	Board board;
-	const int& x = block.getRefX();
-	const int& y = block.getRefY();
-	board.createBlock(block, 0);
-	board.down(block, x, y);
-	board.down(block, x, y);
-	board.down(block, x, y);
-	board.right(block, x, y);
-	board.left(block, x, y);
-	board.rotate(block, x, y);
-	board.rotate(block, x, y);
-	board.fall(block, x, y);
-	board.createBlock(block, 1);
-	board.fall(block, x, y);
-	board.print();
+	Game game(0, 0, 40, 40);
 }

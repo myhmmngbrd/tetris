@@ -1,13 +1,21 @@
 #include "game.h"
-
+/*
+*좌상: ┌
+* 좌하 : └
+* 우상 : ┐
+* 우하 : ┘
+* 가로 : ─
+* 세로 : │
+* 박스 : □ ■
+*/
 
 //block
-void Block::init(int type) {
+void Block::init(int type, int color) {
 	x = 3;
 	y = -2;
 	this->type = type;
 	rotation = 0;
-	color = 1;
+	this->color = color;
 }
 int Block::getX() { return x; }
 int Block::getY() { return y; }
@@ -45,6 +53,14 @@ void Block::createBlock() {
 
 const std::array<int, 4>& Block::operator[] (int index) {
 	return block[index];
+}
+Block& Block::operator= (Block& other) {
+	this->x = other.x;
+	this->y = other.y;
+	this->rotation = other.x;
+	this->type = other.type;
+	this->block = other.block;
+	return *this;
 }
 
 void Block::print() {
@@ -122,8 +138,8 @@ void Board::checkClear() {
 	}
 }
 
-int Board::createBlock(Block& block, int type) {
-	block.init(type);
+int Board::createBlock(Block& block, int type, int color) {
+	block.init(type, color);
 	block.createBlock();
 	int error = checkCollision(block, 3, -2);
 	if (error) {
@@ -216,4 +232,54 @@ void Board::print() {
 	}
 }
 
-
+//game
+Game::Game(int x, int y, int w, int h) :
+	canvas_left(x),
+	canvas_top(y),
+	canvas_width(w),
+	canvas_height(h),
+	canvas(x, y, w, h, &m) 
+{
+	// 주 화면
+	drawBoarder(0,0,12,22);
+	// 그리기
+	canvas.draw(&m);
+	
+	const int& blockX = block.getRefX();
+	const int& blockY = block.getRefY();
+	board.createBlock(block, 0, 1);
+	board.down(block, blockX, blockY);
+	board.down(block, blockX, blockY);
+	drawBlock();
+	old_board = board;
+	Sleep(500);
+	board.down(block, blockX, blockY);
+	drawBlock();
+}
+void Game::drawBoarder(int boxX, int boxY, int boxW, int boxH) {
+	// 모서리
+	canvas.push(boxX, boxY, "┌");
+	canvas.push(boxX + boxW - 1, boxY, "┐");
+	canvas.push(boxX, boxY + boxH -1, "└");
+	canvas.push(boxX + boxW - 1, boxY + boxH -1, "┘");
+	// 가로선
+	for (int i = boxX + 1; i < boxX + boxW - 1; i++) {
+		canvas.push(i, boxY, "─");
+		canvas.push(i, boxY + boxH - 1, "─");
+	}
+	// 세로선
+	for (int i = boxY + 1; i < boxY + boxH - 1; i++) {
+		canvas.push(boxX, i, "│");
+		canvas.push(boxX + boxW - 1, i, "│");
+	}
+}
+void Game::drawBlock() {
+	for (int i = 0; i < 20; i++) {
+		for (int j = 0; j < 10; j++) {
+			if (board[i][j] != old_board[i][j]) {
+				canvas.push(j + 1, i + 1, std::to_string(board[i][j]));
+			}
+		}
+	}
+	canvas.draw(&m);
+}

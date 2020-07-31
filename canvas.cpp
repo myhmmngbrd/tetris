@@ -43,7 +43,7 @@ Canvas::Canvas(int x, int y, int w, int h, std::mutex* m) :
 				this->log.pop_front();
 			}
 			//*/
-			Sleep(33);
+			//Sleep(33);
 		}
 	}, m) {
 	cursorview(0); //커서 삭제
@@ -58,7 +58,10 @@ void Canvas::push(int x, int y, std::string value) {
 	dots.push_back({ x, y, value });
 }
 
-void Canvas::draw() {
+void Canvas::draw(std::mutex* m) {
+	m->lock();
 	log.push_back(std::move(dots));
+	dots = {};
+	m->unlock();
 	cv.notify_one();
 }

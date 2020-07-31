@@ -22,7 +22,7 @@ public:
 	int getY();
 	const int& getRefX();
 	const int& getRefY();
-	void init(int);
+	void init(int, int);
 	void up();
 	void down();
 	void left();
@@ -32,6 +32,7 @@ public:
 	void createBlock();
 
 	const std::array<int, 4>& operator[] (int);
+	Block& operator= (Block&);
 
 	void print();
 };
@@ -48,7 +49,7 @@ public:
 	void clear(int);
 	void checkClear();
 
-	int createBlock(Block&, int);
+	int createBlock(Block&, int, int);
 	int down(Block&, const int&, const int&);
 	int left(Block&, const int&, const int&);
 	int right(Block&, const int&, const int&);
@@ -67,7 +68,14 @@ class Game {
 		canvas_width,
 		canvas_height;
 	Block block;
+	Block future_block;
 	Board board;
+	int board_left,
+		board_top;
+	Board old_board;
+	std::mutex m;
 public:
-
+	Game(int, int, int, int);
+	void drawBoarder(int, int, int, int);
+	void drawBlock();
 };

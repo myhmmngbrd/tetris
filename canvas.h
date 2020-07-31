@@ -10,6 +10,7 @@
 #include<thread>
 #include<mutex>
 #include<condition_variable>
+#include<chrono>
 
 struct Dot {
 	int x, y;
@@ -32,6 +33,6 @@ public:
 	Canvas(int, int, int, int, std::mutex* m);
 	~Canvas();
 	void push(int, int, std::string);
-	void draw();
+	void draw(std::mutex *m);
 };
 
